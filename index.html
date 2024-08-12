@@ -1,0 +1,198 @@
+<html><head><base href="https://1inch-photo-converter.com/">
+<title>多尺寸证件照转换器</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+  }
+  .container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    text-align: center;
+    max-width: 600px;
+    width: 100%;
+  }
+  #preview {
+    max-width: 300px;
+    max-height: 300px;
+    margin-top: 20px;
+  }
+  button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #45a049;
+  }
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+  }
+  .file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+    margin-top: 10px;
+  }
+  .file-input-wrapper input[type=file] {
+    font-size: 100px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .file-input-wrapper .btn-file-input {
+    background-color: #3498db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .file-input-wrapper .btn-file-input:hover {
+    background-color: #2980b9;
+  }
+  #sizeSelector {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #3498db;
+    border-radius: 5px;
+    outline: none;
+    width: 200px;
+    margin-bottom: 10px;
+  }
+  #instructions {
+    margin-top: 20px;
+    text-align: left;
+    padding: 10px;
+    background-color: #e7f3fe;
+    border-radius: 5px;
+  }
+  #instructions h3 {
+    margin-top: 0;
+  }
+  #instructions ol {
+    padding-left: 20px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>多尺寸证件照转换器</h1>
+    <p>选择所需尺寸并上传您的照片，我们将为您转换成标准证件照。</p>
+    <div class="input-group">
+      <select id="sizeSelector">
+        <option value="1">1寸 (25mm x 35mm)</option>
+        <option value="2">2寸 (35mm x 49mm)</option>
+        <option value="5">5寸 (89mm x 127mm)</option>
+        <option value="6">6寸 (102mm x 152mm)</option>
+      </select>
+      <div class="file-input-wrapper">
+        <button class="btn-file-input">选择照片</button>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+    </div>
+    <canvas id="canvas" style="display:none;"></canvas>
+    <img id="preview" alt="预览图" style="display:none;">
+    <br>
+    <button id="download" style="display:none;">下载转换后的照片</button>
+    
+    <div id="instructions">
+      <h3>使用说明：</h3>
+      <ol>
+        <li>从下拉菜单中选择所需的照片尺寸。</li>
+        <li>点击"选择照片"按钮，从您的设备中选择一张照片。</li>
+        <li>选择后，您将看到照片预览和裁剪框。</li>
+        <li>调整裁剪框以选择最佳区域，确保重要的面部特征都包含在内。</li>
+        <li>完成调整后，点击"下载转换后的照片"按钮。</li>
+        <li>转换后的证件照将自动下载到您的设备。</li>
+      </ol>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+  
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const canvas = document.getElementById('canvas');
+    const downloadBtn = document.getElementById('download');
+    const sizeSelector = document.getElementById('sizeSelector');
+    let cropper;
+
+    const sizes = {
+      '1': { width: 295, height: 413, ratio: 25 / 35 },
+      '2': { width: 413, height: 579, ratio: 35 / 49 },
+      '5': { width: 1050, height: 1500, ratio: 89 / 127 },
+      '6': { width: 1200, height: 1800, ratio: 102 / 152 }
+    };
+
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          preview.src = event.target.result;
+          preview.style.display = 'block';
+          if (cropper) {
+            cropper.destroy();
+          }
+          updateCropper();
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    sizeSelector.addEventListener('change', updateCropper);
+
+    function updateCropper() {
+      const size = sizes[sizeSelector.value];
+      if (cropper) {
+        cropper.destroy();
+      }
+      cropper = new Cropper(preview, {
+        aspectRatio: size.ratio,
+        viewMode: 1,
+        ready: function() {
+          this.cropper.crop();
+        }
+      });
+      downloadBtn.style.display = 'inline-block';
+    }
+
+    downloadBtn.addEventListener('click', function() {
+      const size = sizes[sizeSelector.value];
+      canvas.width = size.width;
+      canvas.height = size.height;
+      const croppedImageData = cropper.getCroppedCanvas().toDataURL('image/jpeg');
+      const img = new Image();
+      img.onload = function() {
+        canvas.getContext('2d').drawImage(img, 0, 0, size.width, size.height);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        const link = document.createElement('a');
+        link.download = `${sizeSelector.value}inch_photo.jpg`;
+        link.href = dataUrl;
+        link.click();
+      };
+      img.src = croppedImageData;
+    });
+  </script>
+</body></html>
